@@ -10,6 +10,9 @@ rascunhos/
 *.m4a
 *.ogg
 
+# Certificados locais do gravador — contêm chave privada.
+app/.certs/
+
 # Python
 __pycache__/
 *.pyc

@@ -34,9 +34,59 @@ Opções:
 
 ```bash
 python3 app/gravador.py --modelo medium    # mais preciso, exige máquina com folga
+python3 app/gravador.py --rede             # libera o celular (ver abaixo)
 python3 app/gravador.py --porta 9000
 python3 app/gravador.py --sem-navegador
 ```
+
+## Gravar pelo celular
+
+O computador continua sendo o cérebro: ele transcreve e guarda os arquivos. O
+celular vira só o microfone. Os dois precisam estar no **mesmo Wi-Fi**, e o
+computador precisa ficar ligado com o servidor rodando.
+
+```bash
+python3 app/gravador.py --rede
+```
+
+O terminal mostra o endereço do celular e um QR para não digitar nada.
+
+**Configuração inicial, uma vez só.** O navegador só libera o microfone em
+endereço seguro, então o servidor gera um certificado próprio e o celular
+precisa passar a confiar nele:
+
+1. No celular, abra `https://SEU-IP:8765/ca.crt` (o terminal mostra o endereço).
+2. **iPhone:** o arquivo baixa como perfil. Vá em *Ajustes › Geral › VPN e
+   Gerenciamento de Dispositivo*, instale o perfil, e então em *Ajustes › Geral
+   › Sobre › Ajustes de Confiança do Certificado* ative a confiança total.
+   Sem esse segundo passo o iOS não libera o microfone.
+3. **Android:** *Ajustes › Segurança › Criptografia e credenciais › Instalar
+   certificado › Certificado CA*.
+4. Leia o QR do terminal (ou abra o endereço completo) e grave normalmente.
+
+Depois disso é só ler o QR a cada consulta. O certificado vale um ano, e se o IP
+do computador mudar o servidor regenera sozinho — sem precisar reinstalar nada
+no celular.
+
+### O que muda em relação ao computador
+
+**O áudio atravessa o seu Wi-Fi.** Continua não indo para a internet, e vai
+cifrado por TLS — mas não é mais "não sai da máquina". Em rede doméstica ou da
+clínica, com o certificado instalado, é seguro. **Em Wi-Fi público ou de
+terceiros, grave pelo computador.**
+
+**O endereço tem um código de acesso** (`?t=...`), gerado a cada vez que você
+inicia o servidor. Sem ele o gravador recusa qualquer comando — é o que impede
+outro aparelho da rede de usar sua sessão. Por isso o link precisa ser aberto
+inteiro; digitar só o IP não funciona.
+
+**Mantenha a tela acesa e o app em primeiro plano.** O celular suspende abas em
+segundo plano, e a gravação para junto. A página pede o bloqueio de tela
+automaticamente, mas trocar de app durante a consulta interrompe a captura.
+
+**Bateria e ligação.** Uma chamada recebida interrompe a gravação. Se for usar o
+celular como microfone, ative o modo avião com Wi-Fi ligado, ou use o "não
+perturbe".
 
 ## Modelos
 
@@ -74,10 +124,8 @@ estagiário, não como ditado fiel.
 dá bem mais precisão do que transcrever pedaço por pedaço durante a consulta — o
 modelo usa o contexto todo. Você vê o cronômetro rodando, não o texto aparecendo.
 
-**Só funciona no computador.** O navegador exige contexto seguro para liberar o
-microfone, e `localhost` atende esse requisito; o IP da máquina na rede local,
-não. Gravar pelo celular exigiria certificado HTTPS — dá para fazer, mas não está
-aqui.
+**No celular, a aba precisa ficar em primeiro plano** com a tela acesa. Ver a
+seção acima.
 
 **Fechar a aba durante a gravação perde o trecho em buffer** (até 10 segundos).
 O navegador avisa antes de fechar.

@@ -1,3 +1,9 @@
-# Transcrição local — o áudio não sai da máquina.
-# O servidor usa apenas a biblioteca padrão do Python; esta é a única dependência.
+# Transcrição local — o áudio não sai da sua rede.
 faster-whisper>=1.0,<2.0
+
+# Certificado local, necessário para gravar pelo celular (modo --rede).
+# O navegador só libera o microfone em endereço seguro.
+cryptography>=42.0
+
+# Opcional: mostra o endereço como QR no terminal, para não digitar no celular.
+qrcode>=7.4

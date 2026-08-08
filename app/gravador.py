@@ -18,7 +18,9 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import secrets
 import shutil
+import ssl
 import sys
 import threading
 import uuid
@@ -27,7 +29,7 @@ from datetime import datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 RAIZ = Path(__file__).resolve().parent
 ESTATICOS = RAIZ / "static"
@@ -93,6 +95,11 @@ class Sessao:
 SESSOES: dict[str, Sessao] = {}
 MODELO_ATUAL = "small"
 
+# No modo rede o servidor fica visível para qualquer aparelho no mesmo Wi-Fi.
+# O token impede que um deles use o gravador — a página só o conhece porque
+# ele vem no endereço que você abriu.
+TOKEN = ""
+
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "GravadorConsulta"
@@ -122,6 +129,15 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return SESSOES.get(sid)
 
+    def _autorizado(self) -> bool:
+        """Confere o token nas rotas de API. Sem token configurado, libera."""
+        if not TOKEN:
+            return True
+        enviado = self.headers.get("X-Token") or ""
+        if not enviado:
+            enviado = (parse_qs(urlparse(self.path).query).get("t") or [""])[0]
+        return secrets.compare_digest(enviado, TOKEN)
+
     def log_message(self, formato: str, *args) -> None:
         # Silencia o log de acesso: URL de sessao nao precisa ir para o terminal.
         pass
@@ -130,6 +146,24 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         caminho = urlparse(self.path).path
+
+        # Certificado da CA, para instalar no celular. Fica fora do token:
+        # é chave pública, e é o que o aparelho precisa antes de confiar.
+        if caminho in ("/ca.crt", "/certificado.crt"):
+            import certificado
+
+            if not certificado.CA_CRT.is_file():
+                return self._erro("nenhum certificado gerado", HTTPStatus.NOT_FOUND)
+            dados = certificado.CA_CRT.read_bytes()
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/x-x509-ca-cert")
+            self.send_header("Content-Disposition", 'attachment; filename="gravador-ca.crt"')
+            self.send_header("Content-Length", str(len(dados)))
+            self.end_headers()
+            return self.wfile.write(dados)
+
+        if caminho.startswith("/api/") and not self._autorizado():
+            return self._erro("token inválido ou ausente", HTTPStatus.UNAUTHORIZED)
 
         if caminho == "/api/estado":
             import transcricao
@@ -161,6 +195,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         caminho = urlparse(self.path).path
+        if not self._autorizado():
+            return self._erro("token inválido ou ausente", HTTPStatus.UNAUTHORIZED)
         partes = [p for p in caminho.split("/") if p]
 
         # POST /api/sessao
@@ -203,6 +239,8 @@ class Handler(BaseHTTPRequestHandler):
     # ---------------------------------------------------------------- DELETE
 
     def do_DELETE(self) -> None:
+        if not self._autorizado():
+            return self._erro("token inválido ou ausente", HTTPStatus.UNAUTHORIZED)
         partes = [p for p in urlparse(self.path).path.split("/") if p]
         if len(partes) == 3 and partes[:2] == ["api", "sessao"]:
             sessao = self._sessao(partes[2])
@@ -278,6 +316,20 @@ class Handler(BaseHTTPRequestHandler):
         )
 
 
+def mostrar_qr(url: str) -> bool:
+    """Desenha o QR no terminal, se a biblioteca opcional estiver instalada."""
+    try:
+        import qrcode
+    except ImportError:
+        return False
+
+    qr = qrcode.QRCode(border=1)
+    qr.add_data(url)
+    qr.make(fit=True)
+    qr.print_ascii(invert=True)
+    return True
+
+
 def main(argv: list[str]) -> int:
     ap = argparse.ArgumentParser(description="Gravador de consulta com transcrição local.")
     ap.add_argument("--porta", type=int, default=8765)
@@ -286,31 +338,94 @@ def main(argv: list[str]) -> int:
         default=None,
         help="tiny | base | small | medium | large-v3 (padrão: small)",
     )
+    ap.add_argument(
+        "--rede",
+        action="store_true",
+        help="libera o acesso pelo celular na mesma rede Wi-Fi (ativa HTTPS)",
+    )
     ap.add_argument("--sem-navegador", action="store_true")
     args = ap.parse_args(argv)
 
-    global MODELO_ATUAL
+    global MODELO_ATUAL, TOKEN
     sys.path.insert(0, str(RAIZ))
     import transcricao
 
     MODELO_ATUAL = args.modelo or transcricao.MODELO_PADRAO
     TRABALHO.mkdir(parents=True, exist_ok=True)
 
-    endereco = f"http://localhost:{args.porta}"
+    contexto_tls = None
+    host = "127.0.0.1"
+    esquema = "http"
+    ips: list[str] = []
 
-    print("\n  Gravador de consulta")
-    print(f"  {endereco}\n")
-    print(f"  Modelo de transcrição : {MODELO_ATUAL}")
+    if args.rede:
+        import certificado
+
+        ips = certificado.detectar_ips()
+        if not ips:
+            print("\n  ✗ Não encontrei o endereço desta máquina na rede.")
+            print("    Confirme que o computador está conectado ao Wi-Fi.\n")
+            return 1
+
+        try:
+            cert, chave, novo = certificado.garantir(ips)
+        except certificado.CertificadoIndisponivel as exc:
+            print(f"\n  ✗ {exc}\n")
+            return 1
+
+        contexto_tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        contexto_tls.load_cert_chain(cert, chave)
+        host = "0.0.0.0"  # noqa: S104 — exposição é o objetivo do modo rede
+        esquema = "https"
+        TOKEN = secrets.token_urlsafe(12)
+
+        if novo:
+            print("\n  Certificado gerado para:", ", ".join(ips))
+
+    endereco_local = f"{esquema}://localhost:{args.porta}"
+    if TOKEN:
+        endereco_local += f"/?t={TOKEN}"
+
+    print("\n  Gravador de consulta\n")
+    print(f"  Neste computador : {endereco_local}")
+
+    if args.rede:
+        principal = f"https://{ips[0]}:{args.porta}/?t={TOKEN}"
+        print(f"  No celular       : {principal}")
+        print(f"  Certificado      : https://{ips[0]}:{args.porta}/ca.crt")
+        if len(ips) > 1:
+            print(f"  (outros IPs desta máquina: {', '.join(ips[1:])})")
+
+    print(f"\n  Modelo de transcrição : {MODELO_ATUAL}")
     print(f"  Transcrições em       : {TRABALHO}")
+
     if not transcricao.disponivel():
         print("\n  ⚠ faster-whisper não instalado — a gravação funciona, mas não")
         print("    será possível transcrever. Rode: pip install -r app/requirements.txt")
-    print("\n  O áudio não sai desta máquina. Ctrl+C encerra.\n")
 
-    servidor = ThreadingHTTPServer(("127.0.0.1", args.porta), Handler)
+    if args.rede:
+        print("\n  Antes de gravar pelo celular, uma vez só:")
+        print("    1. Abra o endereço do certificado no celular e instale-o")
+        print("    2. iPhone: Ajustes › Geral › Sobre › Certificados Confiáveis")
+        print("       e ative a confiança total")
+        print("    3. Abra o endereço do gravador (ou leia o QR abaixo)")
+        print("\n  O áudio trafega só pela sua rede Wi-Fi, cifrado, e é")
+        print("  transcrito neste computador. Não passa pela internet.")
+        print("\n  ⚠ Em Wi-Fi público ou de terceiros, prefira gravar pelo computador.\n")
+        if not mostrar_qr(principal):
+            print("  (instale 'qrcode' para ver o endereço como QR: pip install qrcode)\n")
+    else:
+        print("\n  O áudio não sai desta máquina.")
+        print("  Para gravar pelo celular: python3 app/gravador.py --rede\n")
+
+    print("  Ctrl+C encerra.\n")
+
+    servidor = ThreadingHTTPServer((host, args.porta), Handler)
+    if contexto_tls is not None:
+        servidor.socket = contexto_tls.wrap_socket(servidor.socket, server_side=True)
 
     if not args.sem_navegador:
-        threading.Timer(0.5, lambda: webbrowser.open(endereco)).start()
+        threading.Timer(0.5, lambda: webbrowser.open(endereco_local)).start()
 
     try:
         servidor.serve_forever()

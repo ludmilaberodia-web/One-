@@ -40,13 +40,51 @@ function erro(mensagem) {
 
 // ----------------------------------------------------------------- servidor
 
+// No modo celular o servidor exige token, e ele chega no próprio endereço.
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+
 async function api(caminho, opcoes = {}) {
-  const resposta = await fetch(caminho, opcoes);
+  const cabecalhos = { ...(opcoes.headers || {}) };
+  if (TOKEN) cabecalhos['X-Token'] = TOKEN;
+
+  const resposta = await fetch(caminho, { ...opcoes, headers: cabecalhos });
   const tipo = resposta.headers.get('content-type') || '';
   const corpo = tipo.includes('json') ? await resposta.json() : {};
+
+  if (resposta.status === 401) {
+    throw new Error(
+      'Endereço incompleto: falta o código de acesso. Abra o link exato que '
+      + 'aparece no terminal do computador (ele termina com ?t=...).'
+    );
+  }
   if (!resposta.ok) throw new Error(corpo.erro || `Falha na requisição (${resposta.status})`);
   return corpo;
 }
+
+// ------------------------------------------------------------- tela acesa
+
+// Celular suspende a aba quando a tela apaga — e a gravação para junto.
+let travaTela = null;
+
+async function segurarTela() {
+  try {
+    if ('wakeLock' in navigator) travaTela = await navigator.wakeLock.request('screen');
+  } catch {
+    // Sem wake lock a gravação funciona; só exige a tela acesa manualmente.
+  }
+}
+
+function soltarTela() {
+  try { travaTela?.release(); } catch { /* já liberada */ }
+  travaTela = null;
+}
+
+// O sistema derruba o wake lock ao voltar de segundo plano: recupera.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && gravador?.state === 'recording' && !travaTela) {
+    segurarTela();
+  }
+});
 
 // -------------------------------------------------------------------- áudio
 
@@ -106,6 +144,7 @@ function pararAudio() {
   if (contexto && contexto.state !== 'closed') contexto.close();
   gravador = fluxo = contexto = null;
   clearInterval(cronometro);
+  soltarTela();
 }
 
 // ------------------------------------------------------------------ ciclo
@@ -115,7 +154,11 @@ async function iniciar() {
   $('btn-iniciar').disabled = true;
 
   if (!navigator.mediaDevices?.getUserMedia) {
-    erro('Este navegador não permite gravar áudio. Use o Chrome ou o Safari, e abra por http://localhost.');
+    const inseguro = !window.isSecureContext;
+    erro(inseguro
+      ? 'O navegador só libera o microfone em endereço seguro. No computador, use '
+        + 'http://localhost. No celular, inicie o servidor com --rede e abra o endereço https.'
+      : 'Este navegador não permite gravar áudio. Use o Chrome ou o Safari atualizado.');
     $('btn-iniciar').disabled = false;
     return;
   }
@@ -164,6 +207,7 @@ async function iniciar() {
   }, 1000);
 
   medirNivel(fluxo);
+  segurarTela();
   mostrar('gravando');
 }
 
@@ -174,11 +218,13 @@ function pausar() {
   if (gravador.state === 'recording') {
     gravador.pause();
     clearInterval(cronometro);
+    soltarTela();
     status.classList.add('pausado');
     $('rotulo-status').textContent = 'Pausado';
     $('btn-pausar').textContent = 'Continuar';
   } else if (gravador.state === 'paused') {
     gravador.resume();
+    segurarTela();
     cronometro = setInterval(() => {
       segundos += 1;
       const m = String(Math.floor(segundos / 60)).padStart(2, '0');
@@ -205,6 +251,7 @@ async function encerrar() {
   if (fluxo) fluxo.getTracks().forEach((t) => t.stop());
   if (contexto && contexto.state !== 'closed') contexto.close();
   clearInterval(cronometro);
+  soltarTela();
 
   await fila; // garante que todo pedaço chegou antes de transcrever
 
