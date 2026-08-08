@@ -1,0 +1,17 @@
+# Dados clínicos — nunca entram no controle de versão.
+# Ver .claude/skills/documentacao-clinica/references/seguranca-e-conformidade.md §7
+atendimentos/
+transcricoes/
+rascunhos/
+*.transcricao.txt
+*.rascunho.md
+*.wav
+*.mp3
+*.m4a
+*.ogg
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
