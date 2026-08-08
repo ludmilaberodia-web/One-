@@ -1,0 +1,3 @@
+# Transcrição local — o áudio não sai da máquina.
+# O servidor usa apenas a biblioteca padrão do Python; esta é a única dependência.
+faster-whisper>=1.0,<2.0

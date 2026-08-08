@@ -24,7 +24,7 @@ conformidade e scripts — está em `.claude/skills/documentacao-clinica/`.
 O fluxo típico de um atendimento:
 
 ```
-1. Transcrição da consulta (arquivo de texto local)
+1. app/gravador.py          → grava a consulta, transcreve local, apaga o áudio
         ↓
 2. escriba-clinico          → rascunho da nota clínica
         ↓
@@ -44,6 +44,17 @@ Invocação por linguagem natural — o agente certo é selecionado pela descri�
 "O que a literatura diz sobre metformina em DRC estágio 3b?"
 "Monta o resumo e o plano de retorno a partir da nota validada"
 ```
+
+## Captura da consulta
+
+```bash
+pip install -r app/requirements.txt   # uma vez só
+python3 app/gravador.py               # abre em http://localhost:8765
+```
+
+Grava o atendimento, transcreve com Whisper **no próprio computador** e apaga o
+áudio em seguida. Nada trafega pela internet. Detalhes e limites conhecidos em
+[`app/README.md`](../app/README.md).
 
 ## Ferramentas
 

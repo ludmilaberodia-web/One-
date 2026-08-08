@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gravador de consulta</title>
+  <link rel="stylesheet" href="/estilo.css">
+</head>
+<body>
+
+<main>
+  <header>
+    <h1>Gravador de consulta</h1>
+    <p class="sub">O áudio é transcrito neste computador e apagado em seguida. Nada é enviado pela internet.</p>
+  </header>
+
+  <!-- 1. Consentimento ---------------------------------------------------- -->
+  <section id="tela-consentimento" class="cartao">
+    <h2>Antes de gravar</h2>
+    <p>
+      Gravar um atendimento exige consentimento do paciente. Explique o que será
+      gravado, para que serve e que o áudio é apagado logo após virar texto.
+    </p>
+    <label class="consentimento">
+      <input type="checkbox" id="consentimento">
+      <span>O paciente foi informado e consentiu com a gravação deste atendimento.</span>
+    </label>
+    <button id="btn-iniciar" class="primario" disabled>Iniciar gravação</button>
+    <p class="nota" id="aviso-whisper" hidden></p>
+  </section>
+
+  <!-- 2. Gravando ---------------------------------------------------------- -->
+  <section id="tela-gravando" class="cartao" hidden>
+    <div class="status">
+      <span class="ponto"></span>
+      <span id="rotulo-status">Gravando</span>
+    </div>
+    <div class="cronometro" id="cronometro">00:00</div>
+    <div class="medidor"><div class="medidor-nivel" id="nivel"></div></div>
+    <p class="nota" id="enviados">Áudio sendo salvo continuamente.</p>
+    <div class="acoes">
+      <button id="btn-pausar">Pausar</button>
+      <button id="btn-encerrar" class="primario">Encerrar e transcrever</button>
+    </div>
+    <button id="btn-descartar" class="perigo-texto">Descartar gravação</button>
+  </section>
+
+  <!-- 3. Transcrevendo ----------------------------------------------------- -->
+  <section id="tela-processando" class="cartao" hidden>
+    <div class="girando"></div>
+    <h2>Transcrevendo</h2>
+    <p class="nota">
+      Roda neste computador, sem internet. Leva de um a três minutos para cada
+      dez minutos de consulta — mais na primeira vez, quando o modelo é baixado.
+    </p>
+  </section>
+
+  <!-- 4. Pronto ------------------------------------------------------------ -->
+  <section id="tela-pronto" class="cartao" hidden>
+    <h2>Transcrição pronta</h2>
+    <p class="nota" id="resumo-pronto"></p>
+    <pre id="previa"></pre>
+    <p>Agora gere a nota clínica. No terminal, dentro da pasta do projeto:</p>
+    <div class="comando">
+      <code id="comando"></code>
+      <button id="btn-copiar">Copiar</button>
+    </div>
+    <p class="nota">
+      O áudio já foi apagado. Apague também a transcrição depois que a nota
+      validada estiver no prontuário.
+    </p>
+    <button id="btn-nova" class="primario">Nova consulta</button>
+  </section>
+
+  <p id="erro" class="erro" hidden></p>
+</main>
+
+<script src="/app.js"></script>
+</body>
+</html>
