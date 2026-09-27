@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Leitor de Voz</title>
+  <meta name="description" content="Ouça PDFs, EPUBs e livros do Kindle com voz natural enquanto corre, dirige ou cuida da casa.">
+  <meta name="theme-color" content="#0f1115">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Leitor">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="vendor/jszip.min.js" defer></script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <!-- ============ Biblioteca ============ -->
+  <section id="library" class="screen active" aria-label="Biblioteca">
+    <header class="topbar">
+      <h1>Leitor de Voz</h1>
+      <button class="icon-btn" id="open-settings" aria-label="Ajustes">
+        <svg viewBox="0 0 24 24"><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.7 7.7 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5ZM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z" transform="translate(-1 0)"/></svg>
+      </button>
+    </header>
+
+    <label class="dropzone" id="dropzone">
+      <input type="file" id="file-input" accept=".pdf,.epub,.mobi,.azw,.azw3,.prc,.kfx,.txt,.md,.html,.htm,.xhtml,.docx,application/pdf,application/epub+zip,text/plain" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0-12 4.5 4.5M12 3 7.5 7.5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+      <strong>Adicionar arquivo</strong>
+      <span>PDF · EPUB · Kindle sem DRM (MOBI/AZW3) · TXT · DOCX</span>
+    </label>
+
+    <ul id="book-list" class="book-list"></ul>
+    <p id="empty-library" class="empty">Sua biblioteca está vazia. Os arquivos ficam só neste aparelho.</p>
+  </section>
+
+  <!-- ============ Leitor ============ -->
+  <section id="reader" class="screen" aria-label="Leitor">
+    <header class="topbar">
+      <button class="icon-btn" id="back" aria-label="Voltar à biblioteca">
+        <svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></svg>
+      </button>
+      <div class="titles">
+        <h2 id="book-title"></h2>
+        <select id="chapter-select" aria-label="Capítulo"></select>
+      </div>
+      <button class="icon-btn" id="drive-toggle" aria-label="Modo direção" title="Modo direção">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.2"/><path d="M3.5 10.5h5.8M14.7 10.5h5.8M12 14.2V21"/></svg>
+      </button>
+    </header>
+
+    <article id="text" class="text" aria-live="off"></article>
+
+    <div class="drive-panel" id="drive-panel">
+      <p id="drive-chapter"></p>
+      <p id="drive-sentence"></p>
+    </div>
+
+    <footer class="controls">
+      <div class="progress-row">
+        <span id="progress-label">0%</span>
+        <input type="range" id="progress" min="0" max="1000" value="0" aria-label="Posição no livro">
+        <span id="status-label"></span>
+      </div>
+      <div class="main-row">
+        <button class="ctl" id="prev-chapter" aria-label="Capítulo anterior"><svg viewBox="0 0 24 24"><path d="M6 5v14M18 5l-9 7 9 7z"/></svg></button>
+        <button class="ctl" id="back15" aria-label="Voltar 15 segundos"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5"/><text x="12" y="15.5" text-anchor="middle">15</text></svg></button>
+        <button class="ctl play" id="play" aria-label="Tocar"><svg viewBox="0 0 24 24" class="i-play"><path d="M8 5v14l11-7z"/></svg><svg viewBox="0 0 24 24" class="i-pause"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg><span class="spinner"></span></button>
+        <button class="ctl" id="fwd15" aria-label="Avançar 15 segundos"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4.5h-4.5"/><text x="12" y="15.5" text-anchor="middle">15</text></svg></button>
+        <button class="ctl" id="next-chapter" aria-label="Próximo capítulo"><svg viewBox="0 0 24 24"><path d="M18 5v14M6 5l9 7-9 7z"/></svg></button>
+      </div>
+      <div class="chips">
+        <button class="chip" id="rate-chip" aria-label="Velocidade">1,0×</button>
+        <button class="chip" id="sleep-chip" aria-label="Timer para dormir">⏾ Desligado</button>
+        <button class="chip" id="voice-chip" aria-label="Voz">Voz</button>
+      </div>
+    </footer>
+  </section>
+
+  <!-- ============ Ajustes ============ -->
+  <dialog id="settings" class="sheet">
+    <form method="dialog">
+      <header class="sheet-head">
+        <h2>Ajustes</h2>
+        <button class="icon-btn" value="close" aria-label="Fechar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </header>
+
+      <fieldset>
+        <legend>Voz</legend>
+        <div class="segmented" role="radiogroup">
+          <label><input type="radio" name="engine" value="device"><span>Aparelho<small>grátis · offline</small></span></label>
+          <label><input type="radio" name="engine" value="openai"><span>OpenAI<small>neural · fundo</small></span></label>
+          <label><input type="radio" name="engine" value="elevenlabs"><span>ElevenLabs<small>neural · fundo</small></span></label>
+        </div>
+        <p class="hint" id="engine-hint"></p>
+
+        <div data-engine="device">
+          <label class="field">Voz do aparelho
+            <select id="device-voice"></select>
+          </label>
+          <p class="hint">Para voz mais humana: iPhone → Ajustes › Acessibilidade › Conteúdo Falado › Vozes › Português (Brasil) → baixe <b>Luciana (Premium/Aprimorada)</b>. Android → instale/atualize “Serviços de voz do Google” e baixe a voz em alta qualidade. No Edge (PC), as vozes “Online (Natural)” são excelentes.</p>
+        </div>
+
+        <div data-engine="openai">
+          <label class="field">Chave de API da OpenAI
+            <input type="password" id="openai-key" autocomplete="off" placeholder="sk-...">
+          </label>
+          <label class="field">Voz
+            <select id="openai-voice"></select>
+          </label>
+          <label class="field">Modelo
+            <select id="openai-model">
+              <option value="gpt-4o-mini-tts">gpt-4o-mini-tts (mais natural, aceita instruções)</option>
+              <option value="tts-1-hd">tts-1-hd</option>
+              <option value="tts-1">tts-1 (mais barato)</option>
+            </select>
+          </label>
+          <label class="field">Estilo de narração
+            <textarea id="openai-instructions" rows="4"></textarea>
+          </label>
+        </div>
+
+        <div data-engine="elevenlabs">
+          <label class="field">Chave de API da ElevenLabs
+            <input type="password" id="eleven-key" autocomplete="off" placeholder="xi-...">
+          </label>
+          <label class="field">ID da voz <small>(Voice Library › “ID”)</small>
+            <input type="text" id="eleven-voice" autocomplete="off" placeholder="EXAVITQu4vr4xnSDxMaL">
+          </label>
+          <label class="field">Modelo
+            <select id="eleven-model">
+              <option value="eleven_multilingual_v2">Multilingual v2 (mais natural)</option>
+              <option value="eleven_turbo_v2_5">Turbo v2.5 (metade do custo)</option>
+              <option value="eleven_flash_v2_5">Flash v2.5 (mais barato/rápido)</option>
+            </select>
+          </label>
+        </div>
+
+        <button type="button" class="btn" id="test-voice">Testar voz</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Leitura</legend>
+        <label class="field">Velocidade <output id="rate-out"></output>
+          <input type="range" id="rate" min="0.6" max="2.5" step="0.05">
+        </label>
+        <label class="switch"><input type="checkbox" id="skip-citations"><span>Pular citações e referências inline<small>[12], (Smith et al., 2021), URLs, DOIs</small></span></label>
+        <label class="switch"><input type="checkbox" id="stop-at-references"><span>Parar na seção “Referências”<small>ideal para artigos científicos</small></span></label>
+        <label class="switch"><input type="checkbox" id="fallback"><span>Sem internet, usar voz do aparelho<small>evita silêncio em túnel/área sem sinal</small></span></label>
+        <label class="switch"><input type="checkbox" id="wake-lock"><span>Manter tela ligada ao ouvir<small>necessário para a voz do aparelho em muitos celulares</small></span></label>
+      </fieldset>
+
+      <p class="hint privacy">As chaves ficam salvas só neste aparelho e são enviadas apenas ao provedor escolhido. Com a voz do aparelho, nenhum texto sai do celular.</p>
+    </form>
+  </dialog>
+
+  <div id="busy" class="busy" hidden><div><span class="spinner big"></span><p id="busy-text">Lendo arquivo…</p></div></div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <audio id="audio" preload="auto" playsinline></audio>
+  <audio id="keepalive" loop playsinline></audio>
+</body>
+</html>
