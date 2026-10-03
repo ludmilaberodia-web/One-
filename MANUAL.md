@@ -10,6 +10,10 @@ pronto para virar nota clínica.
 | **Onde roda** | No seu computador. O celular é só o microfone |
 | **Internet** | Só para instalar. Depois, funciona offline |
 
+> **Mac ou Windows?** Os comandos deste manual estão escritos para Mac, com
+> `python3`. **No Windows, troque `python3` por `py`** — o resto é idêntico.
+> Onde há diferença maior, o manual mostra as duas versões.
+
 ---
 
 ## 1. Instalar — uma vez só
@@ -34,8 +38,12 @@ git checkout claude/app-agent-function-kvz217
 **1.3 Instale o que o gravador precisa.**
 
 ```bash
-pip install -r app/requirements.txt
+pip3 install -r app/requirements.txt     # Mac e Linux
+py -m pip install -r app/requirements.txt # Windows
 ```
+
+São uns 350 MB de bibliotecas. Mais o modelo de transcrição, que baixa sozinho
+no primeiro uso — cerca de 500 MB no modelo padrão.
 
 **1.4 Faça uma gravação de teste.** Fale sozinha por dois minutos, como se
 estivesse ditando um atendimento. Na primeira vez o modelo de transcrição é
@@ -125,6 +133,10 @@ python3 app/gravador.py --rede
 ```
 
 Deixe o computador ligado e o Terminal aberto durante toda a consulta.
+
+Na primeira vez, o sistema vai pedir permissão para o programa aceitar conexões
+da rede: no Mac aparece uma janela do firewall, no Windows o Defender pergunta —
+**autorize em redes privadas**. Sem isso o celular não alcança o computador.
 
 **4.2 No celular, leia o QR.** Ele já carrega o código de acesso — por isso
 digitar só o endereço não funciona.
@@ -223,10 +235,15 @@ prontuário eletrônico.
 | A transcrição erra nome de medicamento | É esperado. Use `--modelo medium`. E confira as doses na nota, sempre |
 | A gravação parou no meio | No celular, trocar de app ou receber ligação interrompe. O trecho já enviado está salvo; encerre para transcrever o que houver |
 | "Address already in use" | Já existe um gravador rodando. Feche o outro Terminal, ou use `--porta 8766` |
+| Windows: "python3 não é reconhecido" | No Windows o comando é `py`, não `python3`. Se nem `py` funcionar, instale o Python em [python.org](https://www.python.org/downloads/) marcando "Add Python to PATH" |
+| O computador avisa que o certificado não é confiável | Normal no modo `--rede`: o certificado é o seu mesmo. Para gravar pelo computador, rode sem `--rede` |
+| O celular alcança, mas dá erro de conexão | Firewall bloqueando. No Mac, *Ajustes do Sistema › Rede › Firewall*; no Windows, autorize o Python em redes privadas |
 
 ---
 
 ## 8. Referência rápida
+
+No Windows, troque `python3` por `py` em todos eles.
 
 | Comando | O que faz |
 |---|---|
@@ -235,6 +252,20 @@ prontuário eletrônico.
 | `python3 app/gravador.py --modelo medium` | Transcrição mais precisa, mais lenta |
 | `python3 app/gravador.py --porta 8766` | Usa outra porta |
 | `claude` | Abre o assistente para gerar a nota |
+
+### Quanto ocupa no computador
+
+| Item | Espaço |
+|---|---|
+| Claude Code | ~150 MB |
+| Bibliotecas do gravador | ~350 MB |
+| Modelo de transcrição `small` (padrão) | ~500 MB |
+| O projeto em si | menos de 1 MB |
+| **Total** | **cerca de 1 GB** |
+
+Cada atendimento gera um arquivo de texto de poucos KB. O áudio ocupa uns 2 MB
+por consulta **enquanto** está sendo gravado, e é apagado em seguida. Se um dia
+você trocar para o modelo `medium`, somam-se 1,5 GB; para o `large-v3`, 3 GB.
 
 **Onde ficam os arquivos:** `atendimentos/2026-08-08_14-32-05/transcricao.md` —
 uma pasta por atendimento, com data e hora. Nada disso vai para o GitHub.

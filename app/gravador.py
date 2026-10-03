@@ -7,10 +7,13 @@ O audio e apagado assim que a transcricao existe.
 
 Nada trafega pela internet: o servidor escuta apenas em 127.0.0.1.
 
-Uso:
+Uso (Mac e Linux):
     python3 app/gravador.py
     python3 app/gravador.py --porta 9000 --modelo medium
     python3 app/gravador.py --sem-navegador
+
+No Windows, troque `python3` por `py`:
+    py app/gravador.py
 """
 
 from __future__ import annotations
@@ -34,6 +37,9 @@ from urllib.parse import parse_qs, urlparse
 RAIZ = Path(__file__).resolve().parent
 ESTATICOS = RAIZ / "static"
 TRABALHO = RAIZ.parent / "atendimentos"  # coberto pelo .gitignore
+
+# Como o usuario invoca o Python nesta maquina, para as dicas no terminal.
+COMANDO_PY = "py" if sys.platform == "win32" else "python3"
 
 # Limite por pedaco de audio (10s de opus a 32 kbps ~ 40 KB; 8 MB e folga enorme).
 MAX_PEDACO = 8 * 1024 * 1024
@@ -316,6 +322,19 @@ class Handler(BaseHTTPRequestHandler):
         )
 
 
+def console_utf8() -> None:
+    """Garante que acento e símbolo não quebrem a saída no terminal.
+
+    O Windows usa cp1252 quando a saída é redirecionada para arquivo ou pipe,
+    e aí um 'ç' ou um '✓' derruba o print com UnicodeEncodeError.
+    """
+    for fluxo in (sys.stdout, sys.stderr):
+        try:
+            fluxo.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass  # fluxo substituído ou já fechado — nada a fazer
+
+
 def mostrar_qr(url: str) -> bool:
     """Desenha o QR no terminal, se a biblioteca opcional estiver instalada."""
     try:
@@ -345,6 +364,8 @@ def main(argv: list[str]) -> int:
     )
     ap.add_argument("--sem-navegador", action="store_true")
     args = ap.parse_args(argv)
+
+    console_utf8()
 
     global MODELO_ATUAL, TOKEN
     sys.path.insert(0, str(RAIZ))
@@ -411,12 +432,15 @@ def main(argv: list[str]) -> int:
         print("    3. Abra o endereço do gravador (ou leia o QR abaixo)")
         print("\n  O áudio trafega só pela sua rede Wi-Fi, cifrado, e é")
         print("  transcrito neste computador. Não passa pela internet.")
-        print("\n  ⚠ Em Wi-Fi público ou de terceiros, prefira gravar pelo computador.\n")
+        print("\n  ⚠ Em Wi-Fi público ou de terceiros, prefira gravar pelo computador.")
+        print("  ⚠ Neste computador o navegador vai avisar que o certificado não é")
+        print(f"    conhecido — é o seu mesmo. Para gravar aqui, use '{COMANDO_PY} app/gravador.py'")
+        print("    sem --rede, e o aviso não aparece.\n")
         if not mostrar_qr(principal):
             print("  (instale 'qrcode' para ver o endereço como QR: pip install qrcode)\n")
     else:
         print("\n  O áudio não sai desta máquina.")
-        print("  Para gravar pelo celular: python3 app/gravador.py --rede\n")
+        print(f"  Para gravar pelo celular: {COMANDO_PY} app/gravador.py --rede\n")
 
     print("  Ctrl+C encerra.\n")
 

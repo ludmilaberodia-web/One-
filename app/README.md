@@ -7,13 +7,20 @@ O áudio não sai da máquina. O servidor escuta apenas em `127.0.0.1` — nem a
 local alcança. A transcrição roda offline, com Whisper local. O áudio é apagado
 assim que a transcrição existe.
 
+Roda em Mac, Windows e Linux. Os comandos abaixo usam `python3`/`pip3`, como no
+Mac; **no Windows use `py` e `py -m pip`**.
+
 ## Instalar
 
 Uma vez só:
 
 ```bash
-pip install -r app/requirements.txt
+pip3 install -r app/requirements.txt       # Mac e Linux
+py -m pip install -r app/requirements.txt  # Windows
 ```
+
+Ocupa cerca de 350 MB de bibliotecas, mais o modelo de transcrição (~500 MB no
+padrão), baixado no primeiro uso.
 
 ## Usar
 
@@ -132,6 +139,14 @@ O navegador avisa antes de fechar.
 
 **Se a transcrição falhar, o áudio é preservado.** Sem transcrição, ele é a única
 cópia do atendimento — o servidor não apaga. Resolva o erro e encerre de novo.
+
+**No modo `--rede`, o navegador do próprio computador avisa que o certificado é
+desconhecido.** É o certificado da própria máquina, e o aviso é esperado: a CA
+foi instalada no celular, não aqui. Para gravar pelo computador, rode sem
+`--rede`.
+
+**O firewall pede autorização na primeira vez que você usa `--rede`.** Autorize
+em redes privadas, senão o celular não alcança o computador.
 
 ## Consentimento
 

@@ -100,7 +100,17 @@ def anonimizar(texto: str, nomes: list[str]) -> tuple[str, Counter[str]]:
     return texto, contagem
 
 
+def console_utf8() -> None:
+    """Evita UnicodeEncodeError no Windows, onde a saida redirecionada usa cp1252."""
+    for fluxo in (sys.stdout, sys.stderr):
+        try:
+            fluxo.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv: list[str]) -> int:
+    console_utf8()
     ap = argparse.ArgumentParser(
         description="Remove identificadores diretos de texto clínico (LGPD)."
     )

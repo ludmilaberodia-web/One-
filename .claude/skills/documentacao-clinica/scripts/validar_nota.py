@@ -270,7 +270,17 @@ def checar_medicacao(corpo: str, rel: Relatorio) -> None:
         rel.erro("Dose sem zero à esquerda (ex.: ',5 mg'). Escreva '0,5 mg'.")
 
 
+def console_utf8() -> None:
+    """Evita UnicodeEncodeError no Windows, onde a saida redirecionada usa cp1252."""
+    for fluxo in (sys.stdout, sys.stderr):
+        try:
+            fluxo.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv: list[str]) -> int:
+    console_utf8()
     ap = argparse.ArgumentParser(description="Valida a estrutura de uma nota clínica.")
     ap.add_argument("arquivo", type=Path, help="arquivo .md da nota")
     ap.add_argument(
