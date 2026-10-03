@@ -48,8 +48,9 @@ Invocação por linguagem natural — o agente certo é selecionado pela descri�
 ## Captura da consulta
 
 ```bash
-pip install -r app/requirements.txt   # uma vez só
-python3 app/gravador.py               # abre em http://localhost:8765
+python3 -m venv .venv                          # uma vez só
+.venv/bin/pip install -r app/requirements.txt
+.venv/bin/python app/gravador.py               # abre em http://localhost:8765
 ```
 
 Grava o atendimento, transcreve com Whisper **no próprio computador** e apaga o
