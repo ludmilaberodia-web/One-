@@ -14,6 +14,7 @@ Regenera automaticamente quando o IP da maquina muda.
 from __future__ import annotations
 
 import datetime as dt
+import importlib.util
 import ipaddress
 import json
 import socket
@@ -36,11 +37,8 @@ class CertificadoIndisponivel(RuntimeError):
 
 
 def disponivel() -> bool:
-    try:
-        import cryptography  # noqa: F401
-    except ImportError:
-        return False
-    return True
+    """Checa a instalacao sem importar — ver a nota em transcricao.disponivel."""
+    return importlib.util.find_spec("cryptography") is not None
 
 
 def detectar_ips() -> list[str]:

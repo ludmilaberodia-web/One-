@@ -16,6 +16,7 @@ Troque com a variavel de ambiente VOA_MODELO.
 
 from __future__ import annotations
 
+import importlib.util
 import os
 from pathlib import Path
 from typing import Callable
@@ -43,11 +44,13 @@ class TranscricaoIndisponivel(RuntimeError):
 
 
 def disponivel() -> bool:
-    try:
-        import faster_whisper  # noqa: F401
-    except ImportError:
-        return False
-    return True
+    """Diz se o faster-whisper esta instalado, sem pagar o preco de importa-lo.
+
+    Importar de verdade puxa ctranslate2, onnxruntime e tokenizers -- de 5 a 30
+    segundos na primeira execucao, com o terminal mudo e o navegador sem abrir.
+    find_spec so procura o modulo no disco: instantaneo.
+    """
+    return importlib.util.find_spec("faster_whisper") is not None
 
 
 def carregar_modelo(nome: str = MODELO_PADRAO):
