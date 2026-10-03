@@ -21,12 +21,17 @@ pronto para virar nota clínica.
 
 | Arquivo | Para quê |
 |---|---|
-| `abrir-gravador` | Gravar pelo computador |
-| `abrir-gravador-celular` | Gravar pelo celular |
+| **Abrir gravador (Mac)** | Gravar pelo computador |
+| **Abrir no celular (Mac)** | Gravar pelo celular |
+| **Abrir gravador (Windows)** | Gravar pelo computador |
+| **Abrir no celular (Windows)** | Gravar pelo celular |
 
-No Mac são os arquivos `.command`; no Windows, os `.bat`. Duplo clique abre o
-gravador e o navegador. Arraste `abrir-gravador` para o Dock (Mac) ou para a
-barra de tarefas (Windows) e ele fica a um clique.
+Duplo clique no que corresponde ao seu sistema e ele abre o gravador e o
+navegador. Arraste-o para o Dock (Mac) ou para a barra de tarefas (Windows) e
+ele fica a um clique.
+
+No Mac, o nome aparece sem o `.command` no fim — o sistema esconde extensões
+que conhece. Os arquivos `.bat` são os do Windows: no Mac, ignore.
 
 **Pelo Terminal**, se preferir:
 

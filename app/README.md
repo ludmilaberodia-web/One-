@@ -35,8 +35,8 @@ direto para dentro dela.
 .venv\Scripts\python app\gravador.py    # Windows
 ```
 
-Ou duplo clique em `abrir-gravador.command` (Mac) / `abrir-gravador.bat`
-(Windows), na raiz do projeto.
+Ou duplo clique em **Abrir gravador (Mac)** / **Abrir gravador (Windows)**, na
+raiz do projeto.
 
 O navegador abre em `http://localhost:8765`. Então:
 
@@ -67,7 +67,7 @@ computador precisa ficar ligado com o servidor rodando.
 .venv\Scripts\python app\gravador.py --rede    # Windows
 ```
 
-Ou duplo clique em `abrir-gravador-celular.command` / `.bat`.
+Ou duplo clique em **Abrir no celular (Mac)** / **Abrir no celular (Windows)**.
 
 O terminal mostra o endereço do celular e um QR para não digitar nada.
 
