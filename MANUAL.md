@@ -17,7 +17,24 @@ pronto para virar nota clínica.
 
 ## Como abrir, depois de instalado
 
-**O jeito mais fácil: duplo clique.** Na pasta `One-` há dois atalhos:
+**O jeito mais fácil: o aplicativo.** Na pasta `One-` há dois ícones de
+aplicativo, com nome e ícone próprios:
+
+| Aplicativo | Para quê |
+|---|---|
+| 🟩 **Gravador de Consulta** | Gravar pelo computador |
+| 🟦 **Gravador no Celular** | Usar o celular como microfone |
+
+Arraste **Gravador de Consulta** para o Dock e ele fica a um clique, como
+qualquer outro aplicativo seu. Pode arrastar também para a pasta Aplicativos —
+ele encontra o projeto sozinho.
+
+Ao abrir, uma janela do Terminal aparece junto. Isso é de propósito: é nela que
+aparecem o endereço, o andamento da transcrição e os avisos, e é nela que
+`Control + C` encerra.
+
+**Pelos atalhos de arquivo**, se preferir — ou no Windows, que não tem os
+aplicativos:
 
 | Arquivo | Para quê |
 |---|---|

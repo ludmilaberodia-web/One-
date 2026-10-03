@@ -12,3 +12,7 @@
 *.webm binary
 *.crt binary
 *.key binary
+
+# Ícones e pacotes de aplicativo são binários.
+*.icns binary
+*.ico binary
