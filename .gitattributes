@@ -2,6 +2,9 @@
 # Evita que o Git converta para CRLF e quebre comparação de arquivo.
 * text=auto eol=lf
 
+# Atalhos do Windows precisam de CRLF, senão o cmd.exe erra nos blocos if.
+*.bat text eol=crlf
+
 *.png binary
 *.jpg binary
 *.pdf binary

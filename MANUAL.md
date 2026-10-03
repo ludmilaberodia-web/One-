@@ -10,9 +10,42 @@ pronto para virar nota clínica.
 | **Onde roda** | No seu computador. O celular é só o microfone |
 | **Internet** | Só para instalar. Depois, funciona offline |
 
-> **Mac ou Windows?** Os comandos deste manual estão escritos para Mac, com
-> `python3`. **No Windows, troque `python3` por `py`** — o resto é idêntico.
-> Onde há diferença maior, o manual mostra as duas versões.
+> **Mac ou Windows?** Funciona nos dois. Onde o comando muda, o manual mostra as
+> duas versões.
+
+---
+
+## Como abrir, depois de instalado
+
+**O jeito mais fácil: duplo clique.** Na pasta `One-` há dois atalhos:
+
+| Arquivo | Para quê |
+|---|---|
+| `abrir-gravador` | Gravar pelo computador |
+| `abrir-gravador-celular` | Gravar pelo celular |
+
+No Mac são os arquivos `.command`; no Windows, os `.bat`. Duplo clique abre o
+gravador e o navegador. Arraste `abrir-gravador` para o Dock (Mac) ou para a
+barra de tarefas (Windows) e ele fica a um clique.
+
+**Pelo Terminal**, se preferir:
+
+```bash
+cd ~/One-
+.venv/bin/python app/gravador.py
+```
+
+**Para virar um comando de uma palavra** no Mac, cole isto no Terminal uma vez:
+
+```bash
+echo "alias gravador='cd ~/One- && .venv/bin/python app/gravador.py'" >> ~/.zshrc
+echo "alias gravador-celular='cd ~/One- && .venv/bin/python app/gravador.py --rede'" >> ~/.zshrc
+```
+
+Feche e reabra o Terminal. A partir daí basta digitar `gravador`.
+
+**Para fechar**, aperte `Control + C` na janela do Terminal — a tecla Control,
+não a Command. Enquanto a janela estiver aberta, o gravador está no ar.
 
 ---
 
@@ -35,34 +68,29 @@ cd One-
 git checkout claude/app-agent-function-kvz217
 ```
 
-**1.3 Instale o que o gravador precisa.**
+**1.3 Instale o que o gravador precisa**, numa pasta isolada dentro do projeto:
 
 ```bash
-pip3 install -r app/requirements.txt     # Mac e Linux
-py -m pip install -r app/requirements.txt # Windows
-```
-
-São uns 350 MB de bibliotecas. Mais o modelo de transcrição, que baixa sozinho
-no primeiro uso — cerca de 500 MB no modelo padrão.
-
-**Se der o erro `externally-managed-environment`**, o Python da sua máquina não
-aceita instalação direta. Crie um ambiente isolado dentro da pasta do projeto:
-
-```bash
-python3 -m venv .venv              # Mac e Linux
-source .venv/bin/activate
-pip install -r app/requirements.txt
+python3 -m venv .venv                          # Mac e Linux
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r app/requirements.txt
 ```
 
 ```bash
-py -m venv .venv                   # Windows
-.venv\Scripts\activate
-pip install -r app/requirements.txt
+py -m venv .venv                               # Windows
+.venv\Scripts\pip install --upgrade pip
+.venv\Scripts\pip install -r app\requirements.txt
 ```
 
-A partir daí, **sempre** rode `source .venv/bin/activate` (ou
-`.venv\Scripts\activate`) ao abrir o Terminal, antes de iniciar o gravador. Você
-sabe que está ativo quando aparece `(.venv)` no começo da linha.
+Leva de 3 a 10 minutos e baixa uns 350 MB. Termina com uma linha
+`Successfully installed` e uns 25 nomes de pacotes.
+
+A pasta `.venv` guarda as bibliotecas sem tocar no Python do seu sistema —
+é o que evita o erro `externally-managed-environment` e as brigas de permissão
+que o Mac costuma dar. Você **não** precisa "ativar" nada: os comandos deste
+manual já apontam para dentro dela.
+
+Para desinstalar tudo um dia, apague a pasta `One-`. Não sobra nada no sistema.
 
 **1.4 Faça uma gravação de teste.** Fale sozinha por dois minutos, como se
 estivesse ditando um atendimento. Na primeira vez o modelo de transcrição é
@@ -79,7 +107,8 @@ vocabulário.
 **2.1 Abra o gravador**, no Terminal, dentro da pasta do projeto:
 
 ```bash
-python3 app/gravador.py
+.venv/bin/python app/gravador.py          # Mac e Linux
+.venv\Scripts\python app\gravador.py       # Windows
 ```
 
 O navegador abre sozinho em `localhost:8765`. Deixe o Terminal aberto — é ele
@@ -110,7 +139,8 @@ gravador cria um certificado próprio, e o celular precisa passar a confiar nele
 **3.2 Abra o gravador em modo rede:**
 
 ```bash
-python3 app/gravador.py --rede
+.venv/bin/python app/gravador.py --rede       # Mac e Linux
+.venv\Scripts\python app\gravador.py --rede  # Windows
 ```
 
 O Terminal mostra dois endereços e um QR. Guarde o endereço que termina em
@@ -148,7 +178,8 @@ celular é só o microfone.
 **4.1 No computador**, abra o gravador em modo rede:
 
 ```bash
-python3 app/gravador.py --rede
+.venv/bin/python app/gravador.py --rede       # Mac e Linux
+.venv\Scripts\python app\gravador.py --rede  # Windows
 ```
 
 Deixe o computador ligado e o Terminal aberto durante toda a consulta.
@@ -263,14 +294,14 @@ prontuário eletrônico.
 
 ## 8. Referência rápida
 
-No Windows, troque `python3` por `py` em todos eles.
+No Windows, troque `.venv/bin/python` por `.venv\Scripts\python` em todos eles.
 
 | Comando | O que faz |
 |---|---|
-| `python3 app/gravador.py` | Grava pelo computador |
-| `python3 app/gravador.py --rede` | Libera o celular como microfone |
-| `python3 app/gravador.py --modelo medium` | Transcrição mais precisa, mais lenta |
-| `python3 app/gravador.py --porta 8766` | Usa outra porta |
+| `.venv/bin/python app/gravador.py` | Grava pelo computador |
+| `.venv/bin/python app/gravador.py --rede` | Libera o celular como microfone |
+| `.venv/bin/python app/gravador.py --modelo medium` | Transcrição mais precisa, mais lenta |
+| `.venv/bin/python app/gravador.py --porta 8766` | Usa outra porta |
 | `claude` | Abre o assistente para gerar a nota |
 
 ### Quanto ocupa no computador

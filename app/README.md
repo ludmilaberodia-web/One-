@@ -7,26 +7,36 @@ O áudio não sai da máquina. O servidor escuta apenas em `127.0.0.1` — nem a
 local alcança. A transcrição roda offline, com Whisper local. O áudio é apagado
 assim que a transcrição existe.
 
-Roda em Mac, Windows e Linux. Os comandos abaixo usam `python3`/`pip3`, como no
-Mac; **no Windows use `py` e `py -m pip`**.
+Roda em Mac, Windows e Linux.
 
 ## Instalar
 
-Uma vez só:
+Uma vez só, numa pasta isolada dentro do projeto:
 
 ```bash
-pip3 install -r app/requirements.txt       # Mac e Linux
-py -m pip install -r app/requirements.txt  # Windows
+python3 -m venv .venv                          # Mac e Linux
+.venv/bin/pip install -r app/requirements.txt
+```
+
+```bash
+py -m venv .venv                               # Windows
+.venv\Scripts\pip install -r app\requirements.txt
 ```
 
 Ocupa cerca de 350 MB de bibliotecas, mais o modelo de transcrição (~500 MB no
-padrão), baixado no primeiro uso.
+padrão), baixado no primeiro uso. A `.venv` evita o
+`externally-managed-environment` e dispensa ativação: os comandos abaixo apontam
+direto para dentro dela.
 
 ## Usar
 
 ```bash
-python3 app/gravador.py
+.venv/bin/python app/gravador.py        # Mac e Linux
+.venv\Scripts\python app\gravador.py    # Windows
 ```
+
+Ou duplo clique em `abrir-gravador.command` (Mac) / `abrir-gravador.bat`
+(Windows), na raiz do projeto.
 
 O navegador abre em `http://localhost:8765`. Então:
 
@@ -40,10 +50,10 @@ O navegador abre em `http://localhost:8765`. Então:
 Opções:
 
 ```bash
-python3 app/gravador.py --modelo medium    # mais preciso, exige máquina com folga
-python3 app/gravador.py --rede             # libera o celular (ver abaixo)
-python3 app/gravador.py --porta 9000
-python3 app/gravador.py --sem-navegador
+.venv/bin/python app/gravador.py --modelo medium   # mais preciso
+.venv/bin/python app/gravador.py --rede            # libera o celular
+.venv/bin/python app/gravador.py --porta 9000
+.venv/bin/python app/gravador.py --sem-navegador
 ```
 
 ## Gravar pelo celular
@@ -53,8 +63,11 @@ celular vira só o microfone. Os dois precisam estar no **mesmo Wi-Fi**, e o
 computador precisa ficar ligado com o servidor rodando.
 
 ```bash
-python3 app/gravador.py --rede
+.venv/bin/python app/gravador.py --rede        # Mac e Linux
+.venv\Scripts\python app\gravador.py --rede    # Windows
 ```
+
+Ou duplo clique em `abrir-gravador-celular.command` / `.bat`.
 
 O terminal mostra o endereço do celular e um QR para não digitar nada.
 
