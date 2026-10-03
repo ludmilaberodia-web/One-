@@ -45,6 +45,25 @@ py -m pip install -r app/requirements.txt # Windows
 São uns 350 MB de bibliotecas. Mais o modelo de transcrição, que baixa sozinho
 no primeiro uso — cerca de 500 MB no modelo padrão.
 
+**Se der o erro `externally-managed-environment`**, o Python da sua máquina não
+aceita instalação direta. Crie um ambiente isolado dentro da pasta do projeto:
+
+```bash
+python3 -m venv .venv              # Mac e Linux
+source .venv/bin/activate
+pip install -r app/requirements.txt
+```
+
+```bash
+py -m venv .venv                   # Windows
+.venv\Scripts\activate
+pip install -r app/requirements.txt
+```
+
+A partir daí, **sempre** rode `source .venv/bin/activate` (ou
+`.venv\Scripts\activate`) ao abrir o Terminal, antes de iniciar o gravador. Você
+sabe que está ativo quando aparece `(.venv)` no começo da linha.
+
 **1.4 Faça uma gravação de teste.** Fale sozinha por dois minutos, como se
 estivesse ditando um atendimento. Na primeira vez o modelo de transcrição é
 baixado — uns 500 MB, só acontece uma vez. Leia o resultado antes de usar com
@@ -236,6 +255,7 @@ prontuário eletrônico.
 | A gravação parou no meio | No celular, trocar de app ou receber ligação interrompe. O trecho já enviado está salvo; encerre para transcrever o que houver |
 | "Address already in use" | Já existe um gravador rodando. Feche o outro Terminal, ou use `--porta 8766` |
 | Windows: "python3 não é reconhecido" | No Windows o comando é `py`, não `python3`. Se nem `py` funcionar, instale o Python em [python.org](https://www.python.org/downloads/) marcando "Add Python to PATH" |
+| "error: externally-managed-environment" | O Python da sua máquina não aceita instalação direta. Crie um ambiente isolado dentro da pasta do projeto — veja abaixo |
 | O computador avisa que o certificado não é confiável | Normal no modo `--rede`: o certificado é o seu mesmo. Para gravar pelo computador, rode sem `--rede` |
 | O celular alcança, mas dá erro de conexão | Firewall bloqueando. No Mac, *Ajustes do Sistema › Rede › Firewall*; no Windows, autorize o Python em redes privadas |
 
