@@ -7,33 +7,32 @@ Modelos, do mais rapido ao mais preciso:
 
     tiny    ~75 MB   rapido, erra muito termo clinico  -- nao use em consulta
     base    ~145 MB  ainda fraco para portugues medico
-    small   ~500 MB  piso pratico para uso clinico     -- padrao
-    medium  ~1.5 GB  bom, exige maquina com folga
+    small   ~500 MB  erra nome de colirio e eixo em oftalmologia
+    medium  ~1.5 GB  padrao: o piso pratico para consulta oftalmologica
     large-v3 ~3 GB   melhor, lento em CPU
 
-Troque com a variavel de ambiente VOA_MODELO.
+Troque com a variavel de ambiente VOA_MODELO ou com --modelo.
+
+O vocabulario de oftalmologia vive em vocabulario.py e entra aqui por dois
+caminhos: como hotwords dentro do motor, e como deteccao de termos suspeitos
+depois -- que marca, nunca corrige.
 """
 
 from __future__ import annotations
 
 import importlib.util
 import os
+import sys
 from pathlib import Path
 from typing import Callable
 
-MODELO_PADRAO = os.environ.get("VOA_MODELO", "small")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import vocabulario  # noqa: E402
 
-# Termos que o Whisper erra com frequencia em portugues clinico. Alimentar o
-# initial_prompt com vocabulario do dominio melhora sensivelmente o resultado.
-CONTEXTO_CLINICO = (
-    "Consulta médica em português do Brasil. Termos frequentes: anamnese, "
-    "hipótese diagnóstica, conduta, pressão arterial, frequência cardíaca, "
-    "hipertensão, diabetes mellitus, dislipidemia, hipotireoidismo, "
-    "metformina, losartana, sinvastatina, enalapril, omeprazol, dipirona, "
-    "levotiroxina, hidroclorotiazida, anlodipino, atenolol, insulina, "
-    "miligramas, micrograma, comprimido, via oral, hemograma, creatinina, "
-    "hemoglobina glicada, ultrassonografia, encaminhamento, retorno."
-)
+# Medium e nao small: em consulta de oftalmologia o small erra nome de colirio,
+# eixo e estrutura a ponto de a nota virar um formulario de pendencias. Medido
+# em atendimento real.
+MODELO_PADRAO = os.environ.get("VOA_MODELO", "medium")
 
 _modelo = None
 _modelo_carregado: str | None = None
@@ -102,7 +101,12 @@ def transcrever(
         str(caminho),
         language="pt",
         task="transcribe",
-        initial_prompt=CONTEXTO_CLINICO,
+        # hotwords e nao initial_prompt: e o parametro feito para enviesar o
+        # reconhecimento a termos especificos, e com condition_on_previous_text
+        # desligado ele e reaplicado a cada janela de 30s, nao so na primeira.
+        # Orcamento de ~220 tokens, truncado em silencio -- por isso a lista em
+        # vocabulario.py e curta de proposito.
+        hotwords=vocabulario.hotwords(),
         # VAD corta silencio: consulta tem muita pausa, e silencio e onde o
         # Whisper alucina frase inteira.
         vad_filter=True,

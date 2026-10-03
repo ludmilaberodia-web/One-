@@ -28,6 +28,32 @@ from pathlib import Path
 # --------------------------------------------------------------------------
 
 TEMPLATES: dict[str, list[str]] = {
+    "oftalmo": [
+        "queixa principal",
+        "acuidade visual",
+        "biomicroscopia",
+        "pressao intraocular",
+        "fundoscopia",
+        "hipoteses diagnosticas",
+        "conduta",
+        "pendencias de validacao",
+    ],
+    "oftalmo-retorno": [
+        "subjetivo",
+        "objetivo",
+        "avaliacao",
+        "plano",
+        "acuidade visual",
+        "pressao intraocular",
+        "pendencias de validacao",
+    ],
+    "pre-operatorio": [
+        "exames pre-operatorios",
+        "lente ou tecnica planejada",
+        "expectativa alinhada com o paciente",
+        "riscos explicados",
+        "pendencias de validacao",
+    ],
     "anamnese": [
         "queixa principal",
         "historia da doenca atual",
@@ -114,6 +140,11 @@ BLOCO_VALIDACAO = [
     "medico responsavel",
     "crm",
 ]
+
+# Eixo de refracao em milimetros: erro de transcricao visto em atendimento real
+# ("mais 1mm em 25mm"). Eixo e grau, de 0 a 180.
+EIXO_EM_MM = re.compile(r"[×x]\s*\d{1,3}\s*mm\b", re.IGNORECASE)
+GRAU_EM_MM = re.compile(r"[+-]\s?\d+[.,]?\d*\s?mm\b")
 
 DOSE_SUSPEITA = re.compile(r"\b\d+[.,]0\s?(mg|g|ml|mcg|ui)\b", re.IGNORECASE)
 UNIDADE_ABREVIADA = re.compile(r"(?<![\w])(\d+\s?U\b|µg|(?<![m])ug\b)")
@@ -256,6 +287,21 @@ def checar_pii(corpo: str, rel: Relatorio) -> None:
             )
 
 
+def checar_oftalmo(corpo: str, rel: Relatorio) -> None:
+    """Erros de notação oftalmológica que a transcrição costuma introduzir."""
+    if EIXO_EM_MM.search(corpo):
+        rel.erro(
+            "Eixo de refração registrado em milímetros. Eixo é grau, de 0 a 180 — "
+            "a transcrição trocou a unidade. Registre como veio e abra pendência; "
+            "não converta por conta própria."
+        )
+    if GRAU_EM_MM.search(corpo):
+        rel.erro(
+            "Grau esférico ou cilíndrico em milímetros. A unidade é dioptria. "
+            "Mesma origem: erro de transcrição, vira pendência."
+        )
+
+
 def checar_medicacao(corpo: str, rel: Relatorio) -> None:
     if DOSE_SUSPEITA.search(corpo):
         rel.aviso(
@@ -313,6 +359,7 @@ def main(argv: list[str]) -> int:
     marcadores = checar_marcadores(corpo, rel)
     checar_pendencias(corpo, corpo_norm, marcadores, rel)
     checar_placeholders(corpo, rel)
+    checar_oftalmo(corpo, rel)
     checar_medicacao(corpo, rel)
     if not args.sem_pii:
         checar_pii(corpo, rel)

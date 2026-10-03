@@ -23,13 +23,16 @@ carregam o resto:
 
 ### 1. Classifique o atendimento
 
+A prática é **oftalmológica**. Os três primeiros cobrem o dia a dia:
+
 | Situação | Template |
 |---|---|
-| Primeira consulta | Anamnese completa |
-| Retorno / evolução | SOAP |
-| Consulta rápida, pronto atendimento | SOAP enxuto |
-| Encaminhamento a especialista | Carta de encaminhamento |
+| Primeira consulta | **1-A** Consulta oftalmológica completa |
+| Retorno / evolução | **2-A** Retorno oftalmológico (SOAP) |
+| Pré-operatório de catarata ou refrativa | **7** Avaliação pré-operatória |
+| Encaminhamento a outra especialidade | Carta de encaminhamento |
 | Alta / fim de acompanhamento | Relatório de alta |
+| Consulta fora da oftalmologia | Anamnese completa ou SOAP genéricos |
 
 Templates completos em `references/templates.md`.
 
@@ -48,6 +51,13 @@ Passe a fonte inteira uma vez e separe em quatro baldes, sem redigir ainda:
 
 Frase que não cai em nenhum balde (conversa social, ruído, interrupção) é
 descartada. Frase que cabe em dois: escolha o balde da intenção do falante.
+
+### 2.5 Leia a tabela "Termos a conferir"
+
+A transcrição vem com essa tabela ao final quando o detector achou palavras
+parecidas com vocabulário oftalmológico. **Cada linha vira uma pendência.** A
+sugestão é hipótese de software — o corpo da nota mantém o que foi dito, marcado
+como inaudível. Detalhes em `references/estilo-e-terminologia.md`.
 
 ### 3. Trate as armadilhas da transcrição
 

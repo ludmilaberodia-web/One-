@@ -26,8 +26,22 @@ acrescenta exame, retorno ou orientação que o médico não tenha determinado.
    mais alta do que o ideal". Sem alarmismo e sem falsa tranquilização.
 2. **Plano com prazos** — tabela: o quê | quando | por quê | quem lembra.
    Inclui exames solicitados, retorno, ajustes de medicação agendados.
+
+   Para colírio, a tabela do paciente precisa dizer **qual olho** e **o
+   intervalo em horas do dia**, não só a frequência: "olho esquerdo, 1 gota às
+   8h, 14h, 20h e 23h" funciona; "4 vezes ao dia" vira adesão ruim. Se houver
+   mais de um colírio, registre o intervalo de 5 minutos entre eles.
 3. **Sinais de alarme** — lista curta e concreta do que faz o paciente procurar
    pronto-socorro *hoje*, específica do quadro dele.
+
+   Em oftalmologia os que mais importam: perda súbita de visão, dor ocular
+   intensa com náusea ou halos ao redor das luzes, flashes de luz ou chuva de
+   moscas volantes nova, sombra ou cortina no campo de visão, olho vermelho com
+   dor e queda de visão, trauma. No pós-operatório, acrescente dor crescente,
+   piora da visão depois de ter melhorado, e secreção purulenta.
+
+   Use apenas os pertinentes ao quadro registrado — lista genérica longa faz o
+   paciente ignorar todas.
 4. **Rascunhos de mensagem** — para os marcos do plano (lembrete de exame,
    véspera do retorno, check-in de sintoma). Cada um marcado com o gatilho
    (`D+7`, `24h antes do retorno`) e com o campo do canal em branco.

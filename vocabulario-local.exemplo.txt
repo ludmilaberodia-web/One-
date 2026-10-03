@@ -1,0 +1,39 @@
+# Seus termos — copie este arquivo para `vocabulario-local.txt` e edite.
+#
+# Um termo por linha. Linhas com # são ignoradas.
+#
+# Estes termos entram no motor de transcrição NA FRENTE dos genéricos: se o
+# orçamento de ~220 tokens cortar alguma coisa, corta o genérico e preserva
+# o seu. Por isso vale manter a lista enxuta — 15 a 30 termos que você usa
+# todo dia e que a transcrição erra.
+#
+# Além do motor, eles entram no detector de termos suspeitos, que não tem
+# limite de tamanho. Lá pode colocar quantos quiser.
+#
+# O arquivo `vocabulario-local.txt` não vai para o controle de versão.
+
+# --- Colírios que você mais prescreve -------------------------------------
+# Systane Ultra
+# Hyabak
+# Lacrifilm
+# Optive Fusion
+
+# --- Lentes e materiais que você usa --------------------------------------
+# Tecnis
+# AcrySof
+# Vivity
+# PanOptix
+# Symfony
+
+# --- Equipamentos e exames do seu consultório -----------------------------
+# Pentacam
+# IOLMaster
+# Lenstar
+# OCT Spectralis
+# Humphrey
+
+# --- Convênios, hospitais, colegas para quem você encaminha ---------------
+# (nomes próprios que aparecem no ditado e a transcrição erra)
+
+# --- Termos que você usa e já viu a transcrição errar ---------------------
+# (vá acrescentando conforme encontrar — é assim que isto melhora)

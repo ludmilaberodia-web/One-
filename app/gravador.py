@@ -290,6 +290,17 @@ class Handler(BaseHTTPRequestHandler):
             sessao.encerrada = False
             return self._erro(f"Falha na transcrição: {exc}", 500)
 
+        # Termos parecidos com vocabulário de oftalmologia, mas diferentes dele.
+        # Vão anexados à transcrição para virarem pendência na nota — o texto
+        # acima fica como veio, sem correção automática.
+        import vocabulario
+
+        try:
+            conferir = vocabulario.relatorio(texto)
+        except Exception as exc:  # noqa: BLE001 — detector nunca derruba a transcrição
+            print(f"  ⚠ detector de termos falhou ({exc}); transcrição segue intacta")
+            conferir = ""
+
         destino = sessao.pasta / "transcricao.md"
         destino.write_text(
             CABECALHO_TRANSCRICAO.format(
@@ -298,7 +309,8 @@ class Handler(BaseHTTPRequestHandler):
                 modelo=sessao.modelo,
             )
             + (texto or "_(nenhuma fala reconhecida)_")
-            + "\n",
+            + "\n"
+            + conferir,
             encoding="utf-8",
         )
 

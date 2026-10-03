@@ -13,6 +13,9 @@ rascunhos/
 # Certificados locais do gravador — contêm chave privada.
 app/.certs/
 
+# Vocabulário pessoal: pode conter nomes de colegas, convênios e pacientes.
+vocabulario-local.txt
+
 # Python
 __pycache__/
 *.pyc

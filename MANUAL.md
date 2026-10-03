@@ -347,9 +347,36 @@ uma pasta por atendimento, com data e hora. Nada disso vai para o GitHub.
 
 | Modelo | Quando |
 |---|---|
-| `small` — padrão | Piso para uso clínico. Serve na maioria das máquinas |
-| `medium` | Erra menos nome de medicamento. Confortável em Mac com chip Apple |
+| `medium` — padrão | O piso para oftalmologia. ~1,5 GB |
+| `large-v3` | Melhor ainda, bem mais lento em CPU. ~3 GB |
+| `small` | Erra nome de colírio, eixo e estrutura. Medido em consulta real |
 | `tiny`, `base` | Rápidos demais para serem confiáveis — não use em consulta |
+
+### Vocabulário de oftalmologia
+
+A transcrição recebe uma lista de termos da especialidade como pista — nomes de
+colírios, exames, estruturas, cirurgias. Isso reduz muito o erro em palavra
+técnica.
+
+**Para acrescentar os seus termos**, copie `vocabulario-local.exemplo.txt` para
+`vocabulario-local.txt` e edite. Um termo por linha: os colírios que você mais
+prescreve, as lentes que usa, os equipamentos do seu consultório.
+
+Seus termos entram **na frente** dos genéricos, porque o espaço que o motor
+aceita é limitado — se cortar, corta o genérico. Por isso mantenha a lista
+enxuta: 15 a 30 termos do dia a dia.
+
+Esse arquivo não vai para o GitHub: pode conter nome de colega e de convênio.
+
+### Termos a conferir
+
+Toda transcrição vem com uma tabela ao final quando aparecem palavras parecidas
+com vocabulário oftalmológico, mas diferentes dele — `cistâneo` por Systane,
+`capila` por papila.
+
+**Nada é corrigido automaticamente.** A tabela aponta, você decide. Cada linha
+dela vira uma pendência na nota clínica. É de propósito: trocar um colírio em
+silêncio é o erro mais caro que este fluxo poderia cometer.
 
 ---
 
