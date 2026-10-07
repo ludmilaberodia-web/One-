@@ -1,0 +1,69 @@
+#!/bin/bash
+# Executável do aplicativo Gravador de Consulta.
+#
+# Abre o gravador numa janela do Terminal — de propósito: é lá que aparecem o
+# endereço, o andamento da transcrição e os avisos, e é lá que Ctrl+C encerra.
+# Um app sem janela deixaria tudo isso invisível.
+#
+# Edite o atalho .command, não este arquivo: toda a lógica mora lá.
+
+MODO="${MODO_GRAVADOR:-computador}"
+
+if [ "$MODO" = "celular" ]; then
+  ATALHO_NOME="Abrir no celular (Mac).command"
+else
+  ATALHO_NOME="Abrir gravador (Mac).command"
+fi
+
+achar_projeto() {
+  # O app fica na raiz do projeto: .app/Contents/MacOS/ sobe três níveis.
+  local vizinho
+  vizinho="$(cd "$(dirname "$0")/../../.." 2>/dev/null && pwd)"
+  if [ -n "$vizinho" ] && [ -f "$vizinho/app/gravador.py" ]; then
+    printf '%s' "$vizinho"
+    return 0
+  fi
+
+  # Movido para /Applications ou para o Dock: procura nos lugares habituais.
+  local tentativa
+  for tentativa in "$HOME/One-" "$HOME/Documents/One-" "$HOME/Desktop/One-" \
+                   "$HOME/Downloads/One-"; do
+    if [ -f "$tentativa/app/gravador.py" ]; then
+      printf '%s' "$tentativa"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+avisar() {
+  osascript -e "display alert \"Gravador de Consulta\" message \"$1\" as critical" >/dev/null 2>&1
+}
+
+if ! PROJETO="$(achar_projeto)"; then
+  avisar "Não encontrei a pasta do projeto. Ela precisa se chamar One- e estar na sua pasta de usuário, em Documentos, na Área de Trabalho ou em Downloads."
+  exit 1
+fi
+
+ATALHO="$PROJETO/$ATALHO_NOME"
+
+if [ ! -x "$ATALHO" ]; then
+  avisar "Achei o projeto em $PROJETO, mas falta o arquivo $ATALHO_NOME. Rode 'git pull' na pasta do projeto."
+  exit 1
+fi
+
+# Aspas simples protegem os espaços e parênteses do nome dentro do AppleScript.
+case "$ATALHO" in
+  *\'*|*\"*)
+    avisar "O caminho do projeto tem aspas no nome, e isso quebra a abertura. Renomeie a pasta."
+    exit 1
+    ;;
+esac
+
+osascript <<APPLESCRIPT
+tell application "Terminal"
+	activate
+	do script "'$ATALHO'"
+end tell
+APPLESCRIPT

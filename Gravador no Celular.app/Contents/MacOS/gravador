@@ -1,0 +1,4 @@
+#!/bin/bash
+# Mesma lógica do app principal, em modo celular.
+export MODO_GRAVADOR=celular
+exec "$(dirname "$0")/../../../Gravador de Consulta.app/Contents/MacOS/gravador" "$@"

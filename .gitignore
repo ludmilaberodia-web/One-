@@ -1,0 +1,23 @@
+# Dados clínicos — nunca entram no controle de versão.
+# Ver .claude/skills/documentacao-clinica/references/seguranca-e-conformidade.md §7
+atendimentos/
+transcricoes/
+rascunhos/
+*.transcricao.txt
+*.rascunho.md
+*.wav
+*.mp3
+*.m4a
+*.ogg
+
+# Certificados locais do gravador — contêm chave privada.
+app/.certs/
+
+# Vocabulário pessoal: pode conter nomes de colegas, convênios e pacientes.
+vocabulario-local.txt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
