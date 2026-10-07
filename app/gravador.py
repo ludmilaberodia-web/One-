@@ -79,6 +79,14 @@ class Sessao:
         self.encerrada = False
         self.trava = threading.Lock()
 
+        # "gravando" -> "transcrevendo" -> "pronto" | "erro"
+        # A transcricao de uma consulta longa leva minutos. Ela roda numa
+        # thread e a pagina pergunta o estado de tempos em tempos, em vez de
+        # segurar uma conexao aberta esperando -- que o navegador derruba.
+        self.estado = "gravando"
+        self.resultado: dict | None = None
+        self.erro: str | None = None
+
     def anexar(self, dados: bytes) -> None:
         with self.trava:
             if self.encerrada:
@@ -171,6 +179,17 @@ class Handler(BaseHTTPRequestHandler):
         if caminho.startswith("/api/") and not self._autorizado():
             return self._erro("token inválido ou ausente", HTTPStatus.UNAUTHORIZED)
 
+        # GET /api/sessao/<id>/estado — como vai a transcrição desta sessão.
+        # É leitura, então é GET: a página chama isto a cada três segundos.
+        partes = [p for p in caminho.split("/") if p]
+        if len(partes) == 4 and partes[:2] == ["api", "sessao"] and partes[3] == "estado":
+            sessao = self._sessao(partes[2])
+            if sessao is None:
+                # Some da memória assim que o cliente recebe o "pronto". Se a
+                # página perguntar de novo, o resultado já foi entregue.
+                return self._erro("sessão não encontrada", HTTPStatus.NOT_FOUND)
+            return self._estado(sessao)
+
         if caminho == "/api/estado":
             import transcricao
 
@@ -240,6 +259,9 @@ class Handler(BaseHTTPRequestHandler):
             if partes[3] == "encerrar":
                 return self._encerrar(sessao)
 
+            if partes[3] == "estado":
+                return self._estado(sessao)
+
         return self._erro("rota desconhecida", HTTPStatus.NOT_FOUND)
 
     # ---------------------------------------------------------------- DELETE
@@ -261,11 +283,19 @@ class Handler(BaseHTTPRequestHandler):
     # ------------------------------------------------------------ encerrar
 
     def _encerrar(self, sessao: Sessao) -> None:
-        import transcricao
+        """Dispara a transcricao e responde na hora.
 
+        Transcrever meia hora de consulta leva minutos. Segurar a conexao
+        aberta durante esse tempo nao funciona: o navegador desiste, a
+        resposta morre num BrokenPipeError, e a tela fica girando para
+        sempre -- mesmo com o arquivo ja salvo em disco. Entao o trabalho
+        vai para uma thread e a pagina pergunta o estado.
+        """
         with sessao.trava:
             if sessao.encerrada:
-                return self._erro("sessão já encerrada")
+                # Reencerrar uma sessao em andamento devolve o estado atual,
+                # em vez de erro: e o que acontece quando a pagina recarrega.
+                return self._estado(sessao)
             sessao.encerrada = True
 
         if sessao.bytes_recebidos == 0:
@@ -273,65 +303,94 @@ class Handler(BaseHTTPRequestHandler):
             SESSOES.pop(sessao.id, None)
             return self._erro("Nenhum áudio foi gravado.")
 
-        duracao = sessao.duracao
-        print(f"  … transcrevendo {duracao} de áudio (modelo {sessao.modelo})")
+        sessao.estado = "transcrevendo"
+        threading.Thread(target=transcrever_sessao, args=(sessao,), daemon=True).start()
 
-        try:
-            texto = transcricao.transcrever(sessao.audio, modelo=sessao.modelo)
-        except transcricao.TranscricaoIndisponivel as exc:
-            # Preserva o audio: sem transcricao, ele e a unica copia do atendimento.
-            sessao.encerrada = False
-            return self._erro(
-                f"{exc}\n\nO áudio foi preservado em {sessao.audio} — "
-                "resolva a instalação e encerre de novo.",
-                503,
-            )
-        except Exception as exc:  # noqa: BLE001
-            sessao.encerrada = False
-            return self._erro(f"Falha na transcrição: {exc}", 500)
+        return self._json({"estado": "transcrevendo", "duracao": sessao.duracao})
 
-        # Termos parecidos com vocabulário de oftalmologia, mas diferentes dele.
-        # Vão anexados à transcrição para virarem pendência na nota — o texto
-        # acima fica como veio, sem correção automática.
-        import vocabulario
+    def _estado(self, sessao: Sessao) -> None:
+        """Onde a transcricao esta. A pagina chama isto a cada poucos segundos."""
+        if sessao.estado == "pronto":
+            SESSOES.pop(sessao.id, None)  # o cliente recebeu: pode sair da memoria
+            return self._json({"estado": "pronto", **(sessao.resultado or {})})
 
-        try:
-            conferir = vocabulario.relatorio(texto)
-        except Exception as exc:  # noqa: BLE001 — detector nunca derruba a transcrição
-            print(f"  ⚠ detector de termos falhou ({exc}); transcrição segue intacta")
-            conferir = ""
+        if sessao.estado == "erro":
+            return self._json({"estado": "erro", "erro": sessao.erro or "falha"}, 500)
 
-        destino = sessao.pasta / "transcricao.md"
-        destino.write_text(
-            CABECALHO_TRANSCRICAO.format(
-                inicio=sessao.inicio.strftime("%d/%m/%Y %H:%M"),
-                duracao=duracao,
-                modelo=sessao.modelo,
-            )
-            + (texto or "_(nenhuma fala reconhecida)_")
-            + "\n"
-            + conferir,
-            encoding="utf-8",
+        return self._json({"estado": sessao.estado, "duracao": sessao.duracao})
+
+
+def transcrever_sessao(sessao: Sessao) -> None:
+    """Transcreve, salva e apaga o audio. Roda fora da requisicao.
+
+    Chega ao fim mesmo que o navegador tenha sido fechado no meio: o arquivo
+    em disco e o resultado que importa, e o caminho dele sai no terminal.
+    """
+    import transcricao
+    import vocabulario
+
+    duracao = sessao.duracao
+    print(f"  … transcrevendo {duracao} de áudio (modelo {sessao.modelo})")
+
+    try:
+        texto = transcricao.transcrever(sessao.audio, modelo=sessao.modelo)
+    except transcricao.TranscricaoIndisponivel as exc:
+        # Preserva o audio: sem transcricao, ele e a unica copia do atendimento.
+        sessao.encerrada = False
+        sessao.estado = "erro"
+        sessao.erro = (
+            f"{exc}\n\nO áudio foi preservado em {sessao.audio} — "
+            "resolva a instalação e encerre de novo."
         )
+        print(f"  ✗ {sessao.erro}")
+        return
+    except Exception as exc:  # noqa: BLE001
+        sessao.encerrada = False
+        sessao.estado = "erro"
+        sessao.erro = f"Falha na transcrição: {exc}"
+        print(f"  ✗ {sessao.erro}")
+        print(f"    O áudio foi preservado em {sessao.audio}")
+        return
 
-        # Regra de retencao: o audio nao sobrevive a transcricao.
-        sessao.audio.unlink(missing_ok=True)
-        SESSOES.pop(sessao.id, None)
+    # Termos parecidos com vocabulário de oftalmologia, mas diferentes dele.
+    # Vão anexados à transcrição para virarem pendência na nota — o texto
+    # acima fica como veio, sem correção automática.
+    try:
+        conferir = vocabulario.relatorio(texto)
+    except Exception as exc:  # noqa: BLE001 — detector nunca derruba a transcrição
+        print(f"  ⚠ detector de termos falhou ({exc}); transcrição segue intacta")
+        conferir = ""
 
-        print(f"  ✓ transcrição salva — {destino}")
-        print("    áudio apagado")
-
-        return self._json(
-            {
-                "arquivo": str(destino),
-                "duracao": duracao,
-                "palavras": len(texto.split()),
-                "previa": texto[:1200],
-                "comando": (
-                    f'claude "Estrutura essa consulta em SOAP: @{destino.relative_to(RAIZ.parent)}"'
-                ),
-            }
+    destino = sessao.pasta / "transcricao.md"
+    destino.write_text(
+        CABECALHO_TRANSCRICAO.format(
+            inicio=sessao.inicio.strftime("%d/%m/%Y %H:%M"),
+            duracao=duracao,
+            modelo=sessao.modelo,
         )
+        + (texto or "_(nenhuma fala reconhecida)_")
+        + "\n"
+        + conferir,
+        encoding="utf-8",
+    )
+
+    # Regra de retencao: o audio nao sobrevive a transcricao.
+    sessao.audio.unlink(missing_ok=True)
+
+    sessao.resultado = {
+        "arquivo": str(destino),
+        "duracao": duracao,
+        "palavras": len(texto.split()),
+        "previa": texto[:1200],
+        "comando": (
+            f'claude "Estrutura essa consulta em SOAP: @{destino.relative_to(RAIZ.parent)}"'
+        ),
+    }
+    sessao.estado = "pronto"
+
+    print(f"  ✓ transcrição salva — {destino}")
+    print("    áudio apagado")
+    print("    Se a página não mostrar, abra o arquivo acima: a transcrição está lá.")
 
 
 def console_utf8() -> None:

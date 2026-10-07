@@ -258,7 +258,13 @@ async function encerrar() {
   mostrar('processando');
 
   try {
-    const r = await api(`/api/sessao/${sessaoId}/encerrar`, { method: 'POST' });
+    // O servidor dispara a transcrição e responde na hora. Uma consulta de
+    // meia hora leva minutos para transcrever — segurar a conexão aberta
+    // durante esse tempo faz o navegador desistir e a tela girar para sempre,
+    // mesmo com o arquivo já salvo. Então perguntamos de tempos em tempos.
+    await api(`/api/sessao/${sessaoId}/encerrar`, { method: 'POST' });
+    const r = await esperarTranscricao();
+
     $('resumo-pronto').textContent =
       `${r.duracao} de consulta · ${r.palavras} palavras · salvo em ${r.arquivo}`;
     $('previa').textContent = r.previa || '(sem fala reconhecida)';
@@ -270,6 +276,34 @@ async function encerrar() {
   } finally {
     gravador = fluxo = contexto = null;
     $('btn-encerrar').disabled = false;
+  }
+}
+
+async function esperarTranscricao() {
+  const inicio = Date.now();
+  const relogio = $('relogio-processando');
+
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 3000));
+
+    let estado;
+    try {
+      estado = await api(`/api/sessao/${sessaoId}/estado`);
+    } catch (e) {
+      // Uma falha de rede isolada não deve derrubar uma transcrição de
+      // meia hora: segue perguntando, o trabalho continua no servidor.
+      continue;
+    }
+
+    if (estado.estado === 'pronto') return estado;
+    if (estado.estado === 'erro') throw new Error(estado.erro || 'Falha na transcrição.');
+
+    if (relogio) {
+      const seg = Math.round((Date.now() - inicio) / 1000);
+      const m = String(Math.floor(seg / 60)).padStart(2, '0');
+      const s = String(seg % 60).padStart(2, '0');
+      relogio.textContent = `${m}:${s} transcrevendo`;
+    }
   }
 }
 

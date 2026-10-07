@@ -160,6 +160,12 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
 /* Processando ------------------------------------------------------------- */
 
+#relogio-processando {
+  font-size: 1.5rem;
+  color: var(--tinta-fraca);
+  margin-bottom: .9rem;
+}
+
 .girando {
   width: 2rem; height: 2rem;
   margin: .5rem auto 1.1rem;

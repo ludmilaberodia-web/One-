@@ -97,6 +97,32 @@ def transcrever(
 
     whisper = carregar_modelo(modelo)
 
+    # O BLAS do macOS (Accelerate) deixa marcadores de excecao de ponto
+    # flutuante ligados depois de uma multiplicacao de matrizes, e o numpy os
+    # reporta como "divide by zero / overflow / invalid value in matmul" ao
+    # montar o espectrograma. Matmul nao divide: o aviso e do backend, nao da
+    # conta. Silenciar aqui evita encher o terminal de alarme falso durante
+    # meia hora de transcricao.
+    #
+    # Isto nao substitui conferir o resultado: se a transcricao sair vazia ou
+    # sem sentido, o problema e numerico de verdade e o silencio atrapalha --
+    # por isso o aviso abaixo quando nao sai texto nenhum.
+    with _silenciar_ponto_flutuante():
+        return _transcrever(whisper, caminho, progresso)
+
+
+def _silenciar_ponto_flutuante():
+    try:
+        import numpy as np
+
+        return np.errstate(divide="ignore", over="ignore", invalid="ignore")
+    except ImportError:  # pragma: no cover
+        from contextlib import nullcontext
+
+        return nullcontext()
+
+
+def _transcrever(whisper, caminho: Path, progresso) -> str:
     segmentos, info = whisper.transcribe(
         str(caminho),
         language="pt",
@@ -128,6 +154,14 @@ def transcrever(
 
     if progresso:
         progresso(1.0)
+
+    if not linhas:
+        # Audio com fala mas transcricao vazia costuma ser erro numerico real,
+        # e nao silencio -- o VAD teria cortado silencio antes de chegar aqui.
+        print(
+            "  ⚠ Nenhuma fala foi reconhecida. Se havia áudio, pode ser problema "
+            "numérico do backend — tente outro modelo com --modelo small."
+        )
 
     return "\n".join(linhas)
 
